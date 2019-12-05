@@ -7,7 +7,7 @@ import tensorflow as tf
 import config
 import data
 import download
-import model
+import model_sc
 import utils
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
@@ -32,7 +32,7 @@ def define_paths(current_path, args):
     else:
         data_path = os.path.join(args.path, "")
 
-    results_path = current_path + "/results_SAv11/"
+    results_path = current_path + "/results_SCv7/"
     weights_path = current_path + "/weights/"
 
     history_path = results_path + "history/"
@@ -80,7 +80,7 @@ def train_model(dataset, paths, device):
     input_plhd = tf.placeholder_with_default(input_images,
                                              (None, None, None, 3),
                                              name="input")
-    msi_net = model.MSINET()
+    msi_net = model_sc.MSINET()
 
     predicted_maps = msi_net.forward(input_plhd)
 

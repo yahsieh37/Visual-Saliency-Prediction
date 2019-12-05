@@ -97,9 +97,9 @@ class MSINET:
                                    data_format=self._data_format,
                                    name="conv3/conv3_3")
 
-        layer09_SA = self._google_attention(layer09, channels=256, scope="SA1")
+        #layer09_SA = self._google_attention(layer09, channels=256, scope="SA1")
 
-        layer10 = tf.layers.max_pooling2d(layer09_SA, 2, 2,
+        layer10 = tf.layers.max_pooling2d(layer09, 2, 2,
                                           data_format=self._data_format)
 
         #layer10_SA = self._google_attention(layer10, channels=256, scope='self_attention_1')
@@ -122,55 +122,55 @@ class MSINET:
                                    data_format=self._data_format,
                                    name="conv4/conv4_3")
 
-        ch1 = layer13.get_shape().as_list()[1]
-        layer13_SA = self._google_attention(layer13, channels=ch1, scope="SA2")
-        
-        layer14 = tf.layers.max_pooling2d(layer13_SA, 2, 1,
+        #ch1 = layer13.get_shape().as_list()[1]
+        #layer13_SA = self._google_attention(layer13, channels=ch1, scope="SA2")
+                        
+        layer14 = tf.layers.max_pooling2d(layer13, 2, 1,
                                           padding="same",
                                           data_format=self._data_format)
 
         #layer14_SA = self._google_attention(layer14, channels=512, scope='self_attention_2')
-        
+
         layer15 = tf.layers.conv2d(layer14, 512, 3,
                                    padding="same",
                                    activation=tf.nn.relu,
                                    dilation_rate=2,
                                    data_format=self._data_format,
                                    name="conv5/conv5_1")
-        
+
         layer16 = tf.layers.conv2d(layer15, 512, 3,
                                    padding="same",
                                    activation=tf.nn.relu,
                                    dilation_rate=2,
                                    data_format=self._data_format,
                                    name="conv5/conv5_2")
-        
+
         layer17 = tf.layers.conv2d(layer16, 512, 3,
                                    padding="same",
                                    activation=tf.nn.relu,
                                    dilation_rate=2,
                                    data_format=self._data_format,
                                    name="conv5/conv5_3")
-        
-        layer17 = tf.reshape(layer17, shape=[-1, 512, 30, 40])
 
-        ch2 = layer17.get_shape().as_list()[1]
-        layer17_SA = self._google_attention(layer17, channels=ch2, scope="SA3")
+        #layer17 = tf.reshape(layer17, shape=[-1, 512, 30, 40])
+        #ch2 = layer17.get_shape().as_list()[1]
+        #layer17_SA = self._google_attention(layer17, channels=ch2, scope='SA3')
         
-        layer18 = tf.layers.max_pooling2d(layer17_SA, 2, 1,
+        layer18 = tf.layers.max_pooling2d(layer17, 2, 1,
                                           padding="same",
                                           data_format=self._data_format)
 
         #layer18_SA = self._google_attention(layer18, channels=512, scope='self_attention_3')
 
-        encoder_output = tf.concat([layer10, layer14, layer18],     # ch = 1280
-                                   axis=self._channel_axis)  
-        
+        encoder_output = tf.concat([layer10, layer14, layer18],
+                                   axis=self._channel_axis)
+       
         ch = encoder_output.get_shape().as_list()[1]
-        encoder_output = tf.layers.conv2d(encoder_output, ch, 1, data_format=self._data_format, name="fusion")
+        #encoder_output = tf.layers.conv2d(encoder_output, ch, 1, data_format=self._data_format, name="fusion")
         encoder_output = self._google_attention(encoder_output, channels=ch, scope='self_attention')
 
         self._output = encoder_output
+        return layer02, layer05, layer09
         
     def _google_attention(self, x, channels, scope='attention'):
         with tf.variable_scope(scope):
@@ -187,6 +187,7 @@ class MSINET:
 
             #h = conv(x, channels // 2, kernel=1, stride=1, sn=False, scope='h_conv')  # [bs, h, w, c]
             h = tf.layers.conv2d(x, channels // 2, 1, data_format=self._data_format, name="SA_h"+scope[-1])
+            #h = tf.layers.conv2d(x, channels, 1, data_format=self._data_format, name="SA_h"+scope[-1])
             #h = max_pooling(h)
             h = tf.layers.max_pooling2d(h, 2, 2, padding="same", data_format=self._data_format)
 
@@ -204,9 +205,10 @@ class MSINET:
 
             #o = tf.reshape(o, shape=[batch_size, num_channels // 2, height, width])  # [bs, h, w, C]
             o = tf.reshape(o, shape=[tf.shape(x)[0], num_channels // 2, tf.shape(x)[2], tf.shape(x)[3]]) 
+            #o = tf.reshape(o, shape=[tf.shape(x)[0], num_channels, tf.shape(x)[2], tf.shape(x)[3]])
             #o = conv(o, channels, kernel=1, stride=1, sn=False, scope='attn_conv')
-            sa = tf.layers.conv2d(o, channels, 1, data_format=self._data_format, name="SA_o"+scope[-1])
-            x = gamma * sa + x
+            o = tf.layers.conv2d(x, channels, 1, data_format=self._data_format, name="SA_o"+scope[-1])
+            x = gamma * o + x
 
         return x
     
@@ -293,7 +295,7 @@ class MSINET:
                                        name="aspp/conv2")
         self._output = aspp_output
 
-    def _decoder(self, features):
+    def _decoder(self, features, l2, l5, l9):
         """The decoder model applies a series of 3 upsampling blocks that each
            performs bilinear upsampling followed by a 3x3 convolution to avoid
            checkerboard artifacts in the image space. Unlike all other layers,
@@ -308,6 +310,8 @@ class MSINET:
 
         layer1 = self._upsample(features, shape, 2)
 
+        layer1 = tf.concat([l9, layer1], axis=self._channel_axis)
+
         layer2 = tf.layers.conv2d(layer1, 128, 3,
                                   padding="same",
                                   activation=tf.nn.relu,
@@ -318,6 +322,8 @@ class MSINET:
 
         layer3 = self._upsample(layer2, shape, 2)
 
+        layer3 = tf.concat([l5, layer3], axis=self._channel_axis)
+
         layer4 = tf.layers.conv2d(layer3, 64, 3,
                                   padding="same",
                                   activation=tf.nn.relu,
@@ -327,6 +333,8 @@ class MSINET:
         shape = tf.shape(layer4)
 
         layer5 = self._upsample(layer4, shape, 2)
+
+        layer5 = tf.concat([l2, layer5], axis=self._channel_axis)
 
         layer6 = tf.layers.conv2d(layer5, 32, 3,
                                   padding="same",
@@ -393,7 +401,7 @@ class MSINET:
            pretrained VGG16 checkpoint for correct initialization.
         """
 
-        for var in tf.global_variables()[:44]:
+        for var in tf.global_variables()[:26]:
             #print(var)
             key = var.name.split("/", 1)[1]
             #print(key)
@@ -415,9 +423,9 @@ class MSINET:
                              predicted saliency maps.
         """
 
-        self._encoder(images)
+        l2, l5, l9 = self._encoder(images)
         self._aspp(self._output)
-        self._decoder(self._output)
+        self._decoder(self._output, l2, l5, l9)
         self._normalize(self._output)
 
         return self._output

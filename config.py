@@ -7,8 +7,8 @@
 """
 
 PARAMS = {
-    "n_epochs": 10,
-    "batch_size": 1,
+    "n_epochs": 12,
+    "batch_size": 8,
     "learning_rate": 1e-5,
     "device": "gpu"
 }

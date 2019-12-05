@@ -7,7 +7,7 @@ import tensorflow as tf
 import config
 import data
 import download
-import model
+import model_bn
 import utils
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
@@ -32,7 +32,7 @@ def define_paths(current_path, args):
     else:
         data_path = os.path.join(args.path, "")
 
-    results_path = current_path + "/results_SAv11/"
+    results_path = current_path + "/results_BNv1/"
     weights_path = current_path + "/weights/"
 
     history_path = results_path + "history/"
@@ -80,7 +80,10 @@ def train_model(dataset, paths, device):
     input_plhd = tf.placeholder_with_default(input_images,
                                              (None, None, None, 3),
                                              name="input")
-    msi_net = model.MSINET()
+    
+    #training = tf.placeholder(tf.bool, name="training")  ## For BN
+    
+    msi_net = model_bn.MSINET(is_train=True)
 
     predicted_maps = msi_net.forward(input_plhd)
 
@@ -105,6 +108,7 @@ def train_model(dataset, paths, device):
                             config.PARAMS["n_epochs"],
                             history.prior_epochs)
 
+    #training = tf.placeholder(tf.bool, name="training")   ## For BN
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         saver = msi_net.restore(sess, dataset, paths, device)
@@ -115,6 +119,7 @@ def train_model(dataset, paths, device):
             sess.run(train_init_op)
 
             for batch in range(n_train_batches):
+                #_, error = sess.run([optimizer, loss], feed_dict={training: True})
                 _, error = sess.run([optimizer, loss])
 
                 history.update_train_step(error)
@@ -123,6 +128,7 @@ def train_model(dataset, paths, device):
             sess.run(valid_init_op)
 
             for batch in range(n_valid_batches):
+                #error = sess.run(loss, feed_dict={training: False})
                 error = sess.run(loss)
 
                 history.update_valid_step(error)
@@ -162,6 +168,8 @@ def test_model(dataset, paths, device):
 
     input_images, original_shape, file_path = next_element
 
+    #training = tf.placeholder(tf.bool, name="training")   ## For BN
+    
     graph_def = tf.GraphDef()
 
     model_name = "model_%s_%s.pb" % (dataset, device)
@@ -191,6 +199,7 @@ def test_model(dataset, paths, device):
 
         while True:
             try:
+                #output_file, path = sess.run([jpeg, file_path], feed_dict={training: False})
                 output_file, path = sess.run([jpeg, file_path])
             except tf.errors.OutOfRangeError:
                 break

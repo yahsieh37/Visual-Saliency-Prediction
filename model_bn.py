@@ -17,9 +17,10 @@ class MSINET:
        functions related to network training.
     """
 
-    def __init__(self):
+    def __init__(self, is_train):
         self._output = None
         self._mapping = {}
+        self._is_train = is_train
 
         if config.PARAMS["device"] == "gpu":
             self._data_format = "channels_first"
@@ -60,6 +61,9 @@ class MSINET:
                                    activation=tf.nn.relu,
                                    data_format=self._data_format,
                                    name="conv1/conv1_2")
+        layer02 = tf.reshape(layer02, [-1, 64, 240, 320])
+        layer02 = tf.layers.batch_normalization(layer02, training=self._is_train, name="bn1")
+        layer02 = tf.nn.relu(layer02)
 
         layer03 = tf.layers.max_pooling2d(layer02, 2, 2,
                                           data_format=self._data_format)
@@ -75,6 +79,9 @@ class MSINET:
                                    activation=tf.nn.relu,
                                    data_format=self._data_format,
                                    name="conv2/conv2_2")
+        layer05 = tf.reshape(layer05, [-1, 128, 120, 160])
+        layer05 = tf.layers.batch_normalization(layer05, training=self._is_train, name="bn2")
+        layer05 = tf.nn.relu(layer05)
 
         layer06 = tf.layers.max_pooling2d(layer05, 2, 2,
                                           data_format=self._data_format)
@@ -93,13 +100,16 @@ class MSINET:
 
         layer09 = tf.layers.conv2d(layer08, 256, 3,
                                    padding="same",
-                                   activation=tf.nn.relu,
+                                   #activation=tf.nn.relu,
                                    data_format=self._data_format,
                                    name="conv3/conv3_3")
+        layer09 = tf.reshape(layer09, [-1, 256, 60, 80])
+        layer09 = tf.layers.batch_normalization(layer09, training=self._is_train, name="bn3")
+        layer09 = tf.nn.relu(layer09)
+        
+        #layer09_SA = self._google_attention(layer09, channels=256, scope="SA1")
 
-        layer09_SA = self._google_attention(layer09, channels=256, scope="SA1")
-
-        layer10 = tf.layers.max_pooling2d(layer09_SA, 2, 2,
+        layer10 = tf.layers.max_pooling2d(layer09, 2, 2,
                                           data_format=self._data_format)
 
         #layer10_SA = self._google_attention(layer10, channels=256, scope='self_attention_1')
@@ -121,54 +131,55 @@ class MSINET:
                                    activation=tf.nn.relu,
                                    data_format=self._data_format,
                                    name="conv4/conv4_3")
-
-        ch1 = layer13.get_shape().as_list()[1]
-        layer13_SA = self._google_attention(layer13, channels=ch1, scope="SA2")
+        layer13 = tf.reshape(layer13, [-1, 512, 30, 40])
+        layer13 = tf.layers.batch_normalization(layer13, training=self._is_train, name="bn4")
+        layer13 = tf.nn.relu(layer13)
         
-        layer14 = tf.layers.max_pooling2d(layer13_SA, 2, 1,
+        #layer13_SA = self._google_attention(layer13, channels=512, scope="SA2")
+
+        layer14 = tf.layers.max_pooling2d(layer13, 2, 1,
                                           padding="same",
                                           data_format=self._data_format)
 
         #layer14_SA = self._google_attention(layer14, channels=512, scope='self_attention_2')
-        
+
         layer15 = tf.layers.conv2d(layer14, 512, 3,
                                    padding="same",
                                    activation=tf.nn.relu,
                                    dilation_rate=2,
                                    data_format=self._data_format,
                                    name="conv5/conv5_1")
-        
+
         layer16 = tf.layers.conv2d(layer15, 512, 3,
                                    padding="same",
                                    activation=tf.nn.relu,
                                    dilation_rate=2,
                                    data_format=self._data_format,
                                    name="conv5/conv5_2")
-        
+
         layer17 = tf.layers.conv2d(layer16, 512, 3,
                                    padding="same",
                                    activation=tf.nn.relu,
                                    dilation_rate=2,
                                    data_format=self._data_format,
                                    name="conv5/conv5_3")
-        
-        layer17 = tf.reshape(layer17, shape=[-1, 512, 30, 40])
+        layer17 = tf.reshape(layer17, [-1, 512, 30, 40])
+        layer17 = tf.layers.batch_normalization(layer17, training=self._is_train, name="bn5")
+        layer17 = tf.nn.relu(layer17)
 
-        ch2 = layer17.get_shape().as_list()[1]
-        layer17_SA = self._google_attention(layer17, channels=ch2, scope="SA3")
+        #layer17_SA = self._google_attention(layer17, channels=512, scope="SA3")
         
-        layer18 = tf.layers.max_pooling2d(layer17_SA, 2, 1,
+        layer18 = tf.layers.max_pooling2d(layer17, 2, 1,
                                           padding="same",
                                           data_format=self._data_format)
 
         #layer18_SA = self._google_attention(layer18, channels=512, scope='self_attention_3')
 
-        encoder_output = tf.concat([layer10, layer14, layer18],     # ch = 1280
-                                   axis=self._channel_axis)  
-        
-        ch = encoder_output.get_shape().as_list()[1]
-        encoder_output = tf.layers.conv2d(encoder_output, ch, 1, data_format=self._data_format, name="fusion")
-        encoder_output = self._google_attention(encoder_output, channels=ch, scope='self_attention')
+        encoder_output = tf.concat([layer10, layer14, layer18],
+                                   axis=self._channel_axis)
+       
+        #ch = encoder_output.get_shape().as_list()[1]
+        #encoder_output = self._google_attention(encoder_output, channels=ch, scope='self_attention')
 
         self._output = encoder_output
         
@@ -205,8 +216,8 @@ class MSINET:
             #o = tf.reshape(o, shape=[batch_size, num_channels // 2, height, width])  # [bs, h, w, C]
             o = tf.reshape(o, shape=[tf.shape(x)[0], num_channels // 2, tf.shape(x)[2], tf.shape(x)[3]]) 
             #o = conv(o, channels, kernel=1, stride=1, sn=False, scope='attn_conv')
-            sa = tf.layers.conv2d(o, channels, 1, data_format=self._data_format, name="SA_o"+scope[-1])
-            x = gamma * sa + x
+            o = tf.layers.conv2d(o, channels, 1, data_format=self._data_format, name="SA_o"+scope[-1])
+            x = gamma * o + x
 
         return x
     
@@ -393,11 +404,11 @@ class MSINET:
            pretrained VGG16 checkpoint for correct initialization.
         """
 
-        for var in tf.global_variables()[:44]:
+        for var in tf.global_variables()[:42]:
             #print(var)
             key = var.name.split("/", 1)[1]
-            #print(key)
-            if key[:2] == 'co': 
+            print(key)
+            if key[:4] == 'conv': 
                 key = key.replace("kernel:0", "weights")
                 key = key.replace("bias:0", "biases")
                 self._mapping[key] = var
@@ -437,8 +448,12 @@ class MSINET:
         """
 
         error = loss.kld(ground_truth, predicted_maps)
-        optimizer = tf.train.AdamOptimizer(learning_rate)
-        optimizer = optimizer.minimize(error)
+        
+        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        
+        with tf.control_dependencies(update_ops):
+            optimizer = tf.train.AdamOptimizer(learning_rate)
+            optimizer = optimizer.minimize(error)
 
         return optimizer, error
 
