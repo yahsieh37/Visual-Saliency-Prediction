@@ -2,6 +2,15 @@
 ## Final project for Gatech BMED 7610 - Quantitative Neuroscience (Fall 2019)
 This repository is forked from the [original code](https://github.com/alexanderkroner/saliency) for saliency models development and experiments.
 
+The modifications to the original model include:
+- Incoporating self-attention blocks [1] in different layers of the encoder.
+- Features fusion at the end of the encoder.
+- Skip connections between the encoder and decoder.
+- Batch normalization.
+
+ 
+ ### References:
+ [1] Zhang, H., Goodfellow, I., Metaxas, D., & Odena, A. (2019, May). Self-attention generative adversarial networks. In International Conference on Machine Learning (pp. 7354-7363). PMLR.
  
 ------------------
 
