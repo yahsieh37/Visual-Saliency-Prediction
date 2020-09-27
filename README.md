@@ -1,4 +1,6 @@
-Fork from the [original code](https://github.com/alexanderkroner/saliency).
+# Visual Saliency Prediction and Effectiveness Analysis using Metrics
+## Final project for Gatech BMED 7610 - Quantitative Neuroscience (Fall 2019)
+This repository is forked from the [original code](https://github.com/alexanderkroner/saliency) for model architectures modification and experiments.
 
  
 ------------------
