@@ -1,4 +1,11 @@
-# Contextual Encoder-Decoder Network <br/> for Visual Saliency Prediction
+Fork from the [original code](https://github.com/alexanderkroner/saliency).
+
+ 
+------------------
+
+Original readme below:
+
+## Contextual Encoder-Decoder Network <br/> for Visual Saliency Prediction
 
 ![](https://img.shields.io/badge/python-v3.6.8-orange.svg?style=flat-square)
 ![](https://img.shields.io/badge/tensorflow-v1.13.1-orange.svg?style=flat-square)
