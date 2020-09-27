@@ -8,6 +8,7 @@ The modifications to the original model include:
 - Skip connections between the encoder and decoder.
 - Batch normalization.
 
+To train and evaluate the models, follow the instructions in the original readme (shown below) by using the 'main.py' file.
  
  ### References:
  [1] Zhang, H., Goodfellow, I., Metaxas, D., & Odena, A. (2019, May). Self-attention generative adversarial networks. In International Conference on Machine Learning (pp. 7354-7363). PMLR.
