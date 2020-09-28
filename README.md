@@ -1,6 +1,6 @@
 # Visual Saliency Prediction and Effectiveness Analysis using Metrics
 ## Final project for Gatech BMED 7610 - Quantitative Neuroscience (Fall 2019)
-This repository is forked from the [original code](https://github.com/alexanderkroner/saliency) for visual saliency prediction models development and experiments.
+This repository is forked from the [original code](https://github.com/alexanderkroner/saliency) for visual saliency prediction models development and experiments. The final report of this project can be found [here](https://github.com/yahsieh37/Visual-Saliency-Prediction/blob/master/Final-Report_Group7.pdf).
 
 The modifications to the original model include:
 - Incoporating self-attention blocks [1] in different layers of the encoder.
