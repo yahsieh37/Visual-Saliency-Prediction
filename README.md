@@ -17,7 +17,7 @@ Other baselines of saliency prediction models used in the project can be found [
 The datasets used in the project can be found [here](http://saliency.mit.edu/datasets.html) for MIT1003 dataset and [here](http://salicon.net/) for SALICON dataset.
 
 ### Metrics
-
+Codes for calculating scores of the metrics used in the project are under the folder `metrics/`. Use `cal_score.m` to process all saliency prediction results in a given folder.
  
  ### References:
  [1] Zhang, H., Goodfellow, I., Metaxas, D., & Odena, A. (2019, May). Self-attention generative adversarial networks. In International Conference on Machine Learning (pp. 7354-7363). PMLR.
